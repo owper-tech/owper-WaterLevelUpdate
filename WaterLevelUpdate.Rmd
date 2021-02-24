@@ -80,6 +80,9 @@ shaded.range=function(x,y.L,y.U,bg,col=bg,lty=3,col.adj=0.25,lwd=1){
 }
 
 #Paths
+path="//Fldep1/OWPER/EVG/Programmatic/WaterQuality/R_Reports/RegSch"
+data.path=paste(path,"/Data/",sep="")
+GIS.path=paste(data.path,"/GIS/",sep="")
 
 #Current WY
 CurWY=as.numeric(ifelse(as.numeric(format(as.Date(Sys.time()),"%m"))>4,as.numeric(format(as.Date(Sys.time()),"%Y"))+1,format(as.Date(Sys.time()),"%Y")))
@@ -181,8 +184,8 @@ stg.data2=ddply(stg.da,c("SITE","DATE","WaterBody"),summarise,mean.val=mean(Data
 
 ##Regulation Schedules
 #Functions
-reg.sch.lines.fun=function(data,WY=CurWY){
-  dat=data
+reg.sch.lines.fun=function(data.path,WY=CurWY){
+  dat=read.csv(data.path)
   dat$Year=WY-2
   dat$Date2=with(dat,date.fun(paste(Year,Month,Day,sep="-")))
   dat2=dat
@@ -206,8 +209,7 @@ diff.rec.fun=function(data,zone){
 #Chain of Lakes
 kcol.wtrbdy=data.frame(reg.sch.name=c("Hart","E_Toho","Toho","Myrtle","Trout","Gentry","Hatch","Kiss","Istopoka"),WaterBody=c("Hart", "EToho","Toho", "Myrtle", "Trout","Gentry","Kissimmee", "Hatchineha", "Istokpoga"))
 
-data(kcol)
-kcol=reg.sch.lines.fun(kcol)
+kcol=reg.sch.lines.fun(paste(data.path,"KCOL_RegSch3.csv",sep=""))
 kcol.melt=merge(melt(kcol[,c(as.character(kcol.wtrbdy$reg.sch.name),"Date2")],id.vars="Date2"),kcol.wtrbdy,by.x="variable",by.y="reg.sch.name")
 kcol.melt=rename(kcol.melt,c("value"="Reg.Sch.ft"))
 kcol.melt=kcol.melt[order(kcol.melt$Date2,kcol.melt$WaterBody),]
@@ -219,8 +221,7 @@ kcol.stg.dat=kcol.stg.dat[order(kcol.stg.dat$WaterBody,kcol.stg.dat$DATE),]
 kcol.stg.dat=diff.rec.fun(kcol.stg.dat,kcol.stg.dat$Reg.Sch.ft)
 
 #Lake Okeechobee
-data(LORS)
-LORS=reg.sch.lines.fun(LORS)
+LORS=reg.sch.lines.fun(paste(data.path,"LORS.csv",sep=""))
 LORS=LORS[,c("Date2","High", "Intermediate", "Inter1ft", "Low","BaseFlow", "LowLow", "LowMid", "BeneficialUse", "WSM")]
 
 LO.stg.dat=merge(ddply(subset(stg.data2,WaterBody=="Okeechobee"),c("DATE","WaterBody"),summarise,mean.val=mean(mean.val,na.rm=T)),LORS,by.x="DATE",by.y="Date2",all.x=T)
@@ -228,8 +229,7 @@ LO.stg.dat=diff.rec.fun(LO.stg.dat,LO.stg.dat$WSM)
 
 #WMA
 #Roten
-data(roten)
-roten=reg.sch.lines.fun(roten)
+roten=reg.sch.lines.fun(paste(data.path,"Roten_2010InterimOps.csv",sep=""))
 roten.stg.dat=cast(subset(stg.da,WaterBody=="ROTEN"),DATE+WaterBody~SITE,value="Data.Value",mean)
 # QA/QC data with anomolous low values
 roten.stg.dat$RottN.diff=with(roten.stg.dat,c(0,diff(RottN)))
@@ -242,14 +242,12 @@ roten.stg.dat=merge(roten.stg.dat,roten[,c("Date2","ZoneC","ZoneB")],by.x="DATE"
 roten.stg.dat=diff.rec.fun(roten.stg.dat,roten.stg.dat$ZoneB)
 
 #Holey
-data(holey)
-holey=reg.sch.lines.fun(holey)
+holey=reg.sch.lines.fun(paste(data.path,"Holey.csv",sep=""))
 holey.stg.dat=merge(ddply(subset(stg.data2,SITE=="G203D"),c("DATE","WaterBody"),summarise,mean.val=mean(mean.val,na.rm=T)),holey[,c("Date2","Sch1990","Sch2003","Sch2014")],by.x="DATE",by.y="Date2",all.x=T)
 holey.stg.dat=diff.rec.fun(holey.stg.dat,holey.stg.dat$Sch2014)
 
 #WCA1
-data(wca1)
-wca1=reg.sch.lines.fun(wca1)
+wca1=reg.sch.lines.fun(paste(data.path,"WCA1.csv",sep=""))
 wca1.stg.dat=cast(subset(stg.da,WaterBody=="WCA1"),DATE+WaterBody~SITE,value="Data.Value",mean)
 wca1.stg.dat$mean.val=rowMeans(wca1.stg.dat[,c("CA17","CA18T","CA19")],na.rm=T)
 
@@ -257,8 +255,7 @@ wca1.stg.dat=merge(wca1.stg.dat,wca1[,c("Date2","ZoneA1","ZoneA2","ZoneB")],by.x
 wca1.stg.dat=diff.rec.fun(wca1.stg.dat,wca1.stg.dat$ZoneA2)
 
 #WCA2
-data(wca2)
-wca2=reg.sch.lines.fun(wca2)
+wca2=reg.sch.lines.fun(paste(data.path,"WCA2.csv",sep=""))
 wca2.stg.dat=cast(subset(stg.da,WaterBody=="WCA2"),DATE+WaterBody~SITE,value="Data.Value",mean)
 
 wca2.stg.dat=merge(wca2.stg.dat,wca2[,c("Date2","ZoneA")],by.x="DATE",by.y="Date2",all.x=T)
@@ -266,8 +263,7 @@ wca2.stg.dat=merge(wca2.stg.dat,wca2[,c("Date2","ZoneA")],by.x="DATE",by.y="Date
 
 #WCA3
 wca.sites=c("CA363", "CA364", "CA365")
-data(wca3)
-wca3=reg.sch.lines.fun(wca3)
+wca3=reg.sch.lines.fun(paste(data.path,"WCA3A_Schedule2.csv",sep=""))
 wca3.stg.dat=cast(subset(stg.da,WaterBody=="WCA3"),DATE+WaterBody~SITE,value="Data.Value",mean)
 wca3.stg.dat$mean.val=rowMeans(wca3.stg.dat[,wca.sites],na.rm=T)
 wca3.stg.dat=merge(wca3.stg.dat,wca3[,c("Date2","Zone.E","Zone.E1","Zone.D","ZoneC","ZoneB")],by.x="DATE",by.y="Date2",all.x=T)
@@ -291,10 +287,7 @@ CSSS$RecAcc.ftd=with(CSSS,ave(mean.val,SITE,FUN=function(x)(lagpad(x,k=0)-lagpad
 
 ### ***Kissimmee Chain-of-Lakes***
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/KCOL2_v2.jpg")
-```
-
+<center>![KCOL](KCOL2_v2.jpg)</center>
 <font size=4><center>Kissimmee Chain-of-Lakes with structures and lakes identified.</center></font>
 
 ```{r KCOL Reg plot1,echo=FALSE,fig.width=9,fig.height=10,fig.align='center'}
@@ -340,11 +333,7 @@ print(ddply(merge(kcol.stg.dat,data.frame(WaterBody=WB,Lake=WB.lab,order=1:9),"W
 
 ### ***Lake Okeechobee***
 
-
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/LakeO3.jpg")
-```
-
+<center>![LakeO](LakeO3.jpg)</center>
 <font size=3><center>Lake Okeechobee with stage monitoring points and inflow structures identified.</center></font>
 
 ```{r LORS plot,echo=FALSE,fig.width=7,fig.height=5,fig.align='center'}
@@ -402,10 +391,7 @@ print(ddply(LO.stg.dat,"WaterBody",summarise,Min=round(min(mean.val,na.rm=T),1),
 ***
 
 ### ***Rotenberger and Holey Land Wildlife Management Areas***
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/RotenHoley_1.jpg")
-```
-
+<center>![WMA](RotenHoley_1.jpg)</center>
 <font size=3><center>Rotenberger and Holey Land Wildlife Management Areas with stage monitoring points and inflow structures identified.(STAs=Stormwater Treatment Areas; RS= Restoration Strategies; EvPA=Everglades Protection Area)</center></font>
 
 ```{r WMA plot,echo=FALSE,fig.width=10,fig.height=5,fig.align='center'}
@@ -475,10 +461,7 @@ print(rbind(sumx1,sumx2),row.names=F)
 
 ### ***Water Conservation Area 1***
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/WCA1_2.jpg")
-```
-
+<center>![WCA1](WCA1_2.jpg)</center>
 <font size=3><center>Water Conservation Area-1 with stage monitoring points and water control structures identified.(STAs=Stormwater Treatment Areas; RS= Restoration Strategies; EvPA=Everglades Protection Area)</center></font>
 
 ```{r WCA1 plot,echo=FALSE,fig.width=7,fig.height=5,fig.align='center'}
@@ -510,6 +493,11 @@ legend(0.5,0.75,
 <font size=3><center>Mean stage elevation for Water Conservation Area-1 relative to water management schedules.</center></font>
 <font size=4 color="red"><center>Data are provisional and subject to change.</center></font>
 
+<ul><font size=2>
+<li>01 Jan  - 30 Jun use 1-8C gauge. </li>
+<li>01 Jul - 31 Dec use 1-8C gauge, unless rising stage when canal (1-8C) exceeds mean stage (1-7, 1-8T & 1-9) then use mean stage.  </li>
+</font></ul>
+
 <br>
 <br>
 <!--
@@ -525,10 +513,7 @@ print(ddply(wca1.stg.dat,"WaterBody",summarise,Min=round(min(mean.val,na.rm=T),1
 
 ### ***Water Conservation Area 2***
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/WCA2_2.jpg")
-```
-
+<center>![WCA2](WCA2_2.jpg)</center>
 <font size=3><center>Water Conservation Area-2 with stage monitoring points and water control structures identified.(STAs=Stormwater Treatment Areas; RS= Restoration Strategies; EvPA=Everglades Protection Area)</center></font>
 ```{r WCA2 plot,echo=FALSE,fig.width=7,fig.height=5,fig.align='center'}
 par(family="serif",cex.axis=1,mar=c(1,2,1,1),oma=c(1,2.5,1,1));
@@ -557,6 +542,12 @@ legend(0.5,0.75,
 <font size=3><center>Mean stage elevation for Water Conservation Area-2 relative to water management schedules.</center></font>
 <font size=4 color="red"><center>Data are provisional and subject to change.</center></font>
 
+<ul><font size=2>
+<li>01 Jan  - 31 Jan use 2-17 gauge, unless 2-17 recedes to 11.5ft then use S-11B. </li>
+<li>31 Jan - 30 Jun use S-11B gauge. </li>
+<li>01 Jul - 31 Dec use 2-17 gauge.</li>
+</font></ul>
+
 <br>
 <br>
 <!--
@@ -572,10 +563,7 @@ print(ddply(wca2.stg.dat,"WaterBody",summarise,Min=round(min(CA217,na.rm=T),1),Q
 
 ### ***Water Conservation Area 3***
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/WCA3_v2_2.jpg")
-```
-
+<center>![WCA3](WCA3_v2_2.jpg)</center>
 <font size=3><center>Water Conservation Area-3 with stage monitoring points and water control structures identified.(STAs=Stormwater Treatment Areas; RS= Restoration Strategies; EvPA=Everglades Protection Area)</center></font>
 
 
@@ -706,7 +694,7 @@ print(rbind(sumx1,sumx2,sumx3),row.names=F)
 #### Shark River Slough
 
 ```{r srs data,echo=F,include=F}
-srs.flow.dbkey=data.frame(SITE=c(paste0("S12",LETTERS[1:4]),"S333","S334","S356"),DBKEY=c("01313","00610","00621","01310","91487","91488","64136"))
+srs.flow.dbkey=data.frame(SITE=c(paste0("S12",LETTERS[1:4]),"S333","S333N","S334","S356"),DBKEY=c("01313","00610","00621","01310","91487","40371","91488","64136"))
 
 srs.q=data.frame()
 for(i in 1:nrow(srs.flow.dbkey)){
@@ -718,9 +706,10 @@ srs.q=rbind(tmp,srs.q)
 srs.q=merge(srs.q,srs.flow.dbkey,"DBKEY")
 srs.q.da.xtab=cast(srs.q,Date~SITE,value="Data.Value",fun.aggregate=function(x) mean(x,na.rm=T))
 srs.q.da.xtab[is.na(srs.q.da.xtab)]=0
-srs.q.da.xtab$S333R=with(srs.q.da.xtab,ifelse(S333-S334<0,0,S333-S334))
+srs.q.da.xtab$S333R=with(srs.q.da.xtab,ifelse((S333+S333N)-S334<0,0,(S333+S333N)-S334))
 srs.q.da.xtab$TFlow=rowSums(srs.q.da.xtab[,c("S12A","S12B","S12C","S12D","S333R","S356")],na.rm=T)
 srs.q.da.xtab$Date.EST=date.fun(srs.q.da.xtab$Date)
+
 
 S333HW=SFWMD.DBHYDRO.Data.daily(Start.Date,End.Date,"AJ013")
 S333HW$Date.EST=date.fun(S333HW$Date)
@@ -743,7 +732,7 @@ col.rmp=colorRampPalette(c("darkblue","cornflowerblue"))
 cols=col.rmp(5)
 col.adj.val=0.5
 
-ylim.val=c(0,round(max(ceiling(srs.q.da.xtab$TFlow))+max(ceiling(srs.q.da.xtab$TFlow))*0.1,-2));by.y=500;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
+ylim.val=c(0,round(max(ceiling(srs.q.da.xtab$TFlow))+max(ceiling(srs.q.da.xtab$TFlow))*0.1,-2));by.y=1000;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
 xlim.val=c(date.fun(paste(CurWY-1,05,01,sep="-")),date.fun(paste(CurWY,05,01,sep="-")));xmaj=date.fun(seq(xlim.val[1],xlim.val[2],"3 months"));xmin=date.fun(seq(xlim.val[1],xlim.val[2],"1 months"))
 
 par(family="serif",mar=c(1,2,1,1),oma=c(1,2,0.5,1));
@@ -765,7 +754,7 @@ mtext(side=1,line=1.75,"Date (Month-Year)")
 plot(0:1,0:1,type = 'n', axes = F,xlab=NA, ylab=NA)
 leg.x=0.5;#xlim.val[1]+(diff(xlim.val)/2);
 leg.y=0.5;#ylim.val[1]-7*1000
-legend.txt=c("S12A","S12B","S12C","S12D","S333-S334","S356");pch.vals=22
+legend.txt=c("S12A","S12B","S12C","S12D","(S333+S333N)-S334","S356");pch.vals=22
 legend(leg.x,leg.y,legend=legend.txt,pch=pch.vals,col=c(cols,"orange"),pt.bg=adjustcolor(c(cols,"orange"),col.adj.val),lty=NA,lwd=1,pt.cex=1.5,ncol=3,cex=1,bty="n",y.intersp=1,x.intersp=0.75,xpd=NA,xjust=0.5)
 ```
 
@@ -780,7 +769,7 @@ par(family="serif",mar=c(1,2,1,3),oma=c(1,2,0.5,1));
 layout(matrix(1:2,2,1,byrow=F),heights=c(1,0.25))
 plot(TFlow~Date.EST,srs.q.da.xtab,xlim=xlim.val,ylim=ylim.val,yaxt="n",xaxt="n",ylab=NA,xlab=NA,yaxs="i",type="n",axes=F)
 abline(h=ymaj,v=xmaj,lty=3,col="grey")
-with(srs.q.da.xtab,shaded.range(Date.EST,rep(0,nrow(srs.q.da.xtab)),S333,cols[5],col.adj=col.adj.val,lty=1))
+with(srs.q.da.xtab,shaded.range(Date.EST,rep(0,nrow(srs.q.da.xtab)),(S333+S333N),cols[5],col.adj=col.adj.val,lty=1))
 axis_fun(2,ymaj,ymin,ymaj,1)
 axis_fun(1,xmaj,xmin,format(xmaj,"%m-%Y"),1);box(lwd=1)
 
@@ -797,7 +786,7 @@ mtext(side=4,line=2,"Stage Elevation (Ft, NGVD29)")
 plot(0:1,0:1,type = 'n', axes = F,xlab=NA, ylab=NA)
 leg.x=0.5;#xlim.val[1]+(diff(xlim.val)/2);
 leg.y=0.5;#ylim.val[1]-7*1000
-legend.txt=c("S333","S333 HW","9.2 Ft Stage");
+legend.txt=c("S333+S333N","S333 HW","9.2 Ft Stage");
 legend(leg.x,leg.y,legend=legend.txt,pch=c(22,NA,NA),col=c(cols[5],adjustcolor("indianred1",0.75),"black"),pt.bg=c(adjustcolor(cols[5],col.adj.val),NA,NA),lty=c(NA,1,2),lwd=c(0.5,2,1),pt.cex=1.5,ncol=3,cex=1,bty="n",y.intersp=1,x.intersp=0.75,xpd=NA,xjust=0.5)
 
 ```
@@ -806,10 +795,7 @@ S333 daily maximum gate opening for `r format(as.Date(YEST),"%b %d, %Y")` was `r
 
 #### L-29 Canal
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/L29Map2.jpg")
-```
-
+<center>![L29](L29Map2.jpg)</center>
 <font size=3><center>Stage monitoring locations along the L-29 Canal, north of Everglades National and south of Water Conservation Area-3B.</center></font>
 
 ```{r L29 plot,echo=FALSE,fig.width=10,fig.height=5,fig.align='center'}
@@ -832,10 +818,10 @@ mtext(side=1,"Month",line=2.5,cex=2)
 mtext(side=2,"Stage Elevation (Feet, NGVD29)",line=2.25,cex=1.5)
 xleg=xlim.val[1]+(diff(xlim.val)/2);yleg=ylim.val[1]-1.35
 legend(xleg,yleg,
-       legend=c("Mean L29 Stage","L-29 Limit (7.5 Feet)","Deviation 8.5 Feet"),lwd=c(2,2,2,2),col=c("dodgerblue","red","gray50"),
+       legend=c("Mean L29 Stage","L-29 Limit (7.5 Feet)","FDOT Maximum Stage Constraint"),lwd=c(2,2,2,2),col=c("dodgerblue","red","gray50"),
        lty=c(1,1,2),pt.cex=3,ncol=2,cex=1,bty="n",y.intersp=1,x.intersp=0.75,xpd=NA,xjust=0.5)
 
-ylim.val=c(2,8);by.y=1;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
+ylim.val=c(2,10);by.y=2;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
 plot(mean.val~DATE,L29,type="n",xlim=xlim.vals,ylim=ylim.val,ylab=NA,xlab=NA,yaxs="i",xaxs="i",xaxt="n",yaxt="n")
 abline(h=ymaj,v=xmaj,lty=3,col="grey")
 abline(v=date.fun(paste(CurWY-1,05,01,sep="-")),lwd=2)
@@ -872,10 +858,7 @@ print(rbind(sumx1,sumx2),row.names=F)
 
 #### Cape Sable Seaside Sparrow
 
-```{r ,out.width="50%",fig.align="center",echo=F}
-knitr::include_graphics("./maps/CSSS-ENP2.jpg")
-```
-
+<center>![CSSS](CSSS-ENP2.jpg)</center>
 <font size=3><center>Stage monitoring locations within Everglades National Park relative to Cape Sable Seaside Sparrow populations. (EvPA=Everglades Protection Area; CSSS=Cape Sable Seaside Sparrow).</center></font>
 
 ```{r CSSS plot,echo=FALSE,fig.width=9,fig.height=7,fig.align='center'}
@@ -979,8 +962,6 @@ print(csss.sumstats,row.names=F)
 
 ***
 
-```{r ,out.width="10%",fig.align="center",echo=F}
-knitr::include_graphics("https://floridadep.gov/system/files/styles/general_page_images__scaled_to_900_pixels_/private/media-folders/media-root/in-house-graphic-DEP%20Logo%20color%20Large.png?itok=wm1GoIhx")
-```
+<center>![FDEP](deplogo.png)</center>
 
-<font size=6 face="Times New Roman, Times, serif"><center>Office of Water Policy and Ecosystems Restoration</center></font>
+<font size=6 face="Times New Roman, Times, serif"><center>Office of Ecosystem Projects</center></font>

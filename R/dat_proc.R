@@ -16,7 +16,7 @@ save(LORS,file="./Data/LORS.RData")
 
 # Wildlife Management Areas
 # Roten
-roten=read.csv("./RegSch/Roten.csv")
+roten=read.csv("./RegSch/Roten_2010InterimOps.csv")
 save(roten,file="./Data/roten.RData")
 
 # Holey
